@@ -6,11 +6,11 @@ This guide will walk you through setting up and running the Spring Boot applicat
 
 - Docker installed on your system
 - Docker Compose installed
-- Java JDK (version compatible with your Spring Boot app)
-- Maven or Gradle (depending on your build system)
+- Java JDK (version 17)
 
-## Step 1: Database Schema Setup
-1. Create a `schema.sql` file in `src/main/resources` (same level as `application.properties`):
+## Step 1: Database Schema and Configuration Setup
+
+1. **Create the required files** in `src/main/resources`:
 
 src/main/resources/
 
@@ -104,7 +104,32 @@ CREATE INDEX IF NOT EXISTS idx_banner_content_banner_id ON banner_contents (bann
 CREATE INDEX IF NOT EXISTS idx_insurance_deleted_at ON insurances (deleted_at) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_promotion_deleted_at ON promotions (deleted_at) WHERE deleted_at IS NULL;
 ```
+3. Create application.properties with this configuration:
+```properties
+server.address=127.0.0.1
 
+spring.application.name=Insurance Backend API
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/insurance_db
+spring.datasource.username=root
+spring.datasource.password=example
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.datasource.hikari.maximum-pool-size=5
+
+spring.sql.init.mode=never
+spring.sql.init.schema-locations=classpath:schema.sql
+
+spring.jpa.hibernate.ddl-auto=none
+
+spring.servlet.multipart.max-file-size=20MB
+spring.servlet.multipart.max-request-size=20MB
+
+minio.endpoint=http://localhost:9000
+minio.access-key=YOUR_ACCESS_KEY
+minio.secret-key=YOUR_SECRET_KEY
+minio.bucket-name=insurance-bucket
+```
 ## Step 2: Run Docker Compose
 
 1. Create a `docker-compose.yml` file with the following content:
