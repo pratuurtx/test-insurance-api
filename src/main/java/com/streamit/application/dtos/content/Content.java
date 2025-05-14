@@ -1,8 +1,7 @@
 package com.streamit.application.dtos.content;
 
 import com.streamit.application.dtos.common.StatusEnum;
-import com.streamit.application.dtos.common.TypeEnum;
-import lombok.AllArgsConstructor;
+import com.streamit.application.dtos.common.CategoryEnum;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +14,10 @@ public class Content {
     private UUID id;
     private String title;
     private StatusEnum status;
-    private TypeEnum type;
+    private CategoryEnum category;
     private LocalDateTime effectiveFrom;
     private LocalDateTime effectiveTo;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
 }

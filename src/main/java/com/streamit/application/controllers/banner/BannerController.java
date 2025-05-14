@@ -25,17 +25,17 @@ public class BannerController {
     public ResponseEntity<Map<String, Object>> createBanner(
             @Validated @ModelAttribute BannerCreateReqDTO bannerCreateReqDTO
     ) {
-        return new ResponseEntity<>(ResponseUtil.success("Create Banner Success", bannerService.createBanner(bannerCreateReqDTO)), HttpStatus.CREATED);
+        return new ResponseEntity<>(ResponseUtil.success("Banner created successfully.", bannerService.createBanner(bannerCreateReqDTO)), HttpStatus.CREATED);
     }
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getBanners() {
-        return new ResponseEntity<>(ResponseUtil.success("Get All Banner Success", bannerService.getAllBanners()), HttpStatus.OK);
+        return new ResponseEntity<>(ResponseUtil.success("All banners retrieved successfully.", bannerService.getAllBanners()), HttpStatus.OK);
     }
 
     @GetMapping(path = "{id}")
     public ResponseEntity<Map<String, Object>> getBannerById(@PathVariable UUID id) {
-        return new ResponseEntity<>(ResponseUtil.success("Get Banner with ID#" + id.toString() + " Success", bannerService.getBannerById(id)), HttpStatus.OK);
+        return new ResponseEntity<>(ResponseUtil.success("Banner retrieved successfully.", bannerService.getBannerById(id)), HttpStatus.OK);
     }
 
     @PatchMapping(path = "{id}")
@@ -43,12 +43,12 @@ public class BannerController {
             @PathVariable UUID id,
             @Validated @ModelAttribute BannerUpdateReqDTO bannerUpdateReqDTO
     ) {
-        return new ResponseEntity<>(ResponseUtil.success("Update Banner Success", bannerService.updateBannerById(id, bannerUpdateReqDTO)), HttpStatus.OK);
+        return new ResponseEntity<>(ResponseUtil.success("Banner updated successfully.", bannerService.updateBannerById(id, bannerUpdateReqDTO)), HttpStatus.OK);
     }
 
     @DeleteMapping(path = "{id}")
     public ResponseEntity<Map<String, Object>> deleteBannerById(@PathVariable UUID id) {
         bannerService.deleteBannerById(id);
-        return new ResponseEntity<>(ResponseUtil.createNoDataResponse("Delete Banner with ID#" + id.toString() + " Success"), HttpStatus.OK);
+        return new ResponseEntity<>(ResponseUtil.createNoDataResponse("Banner deleted successfully."), HttpStatus.OK);
     }
 }

@@ -9,9 +9,11 @@ public interface CommonDAO<T, ID, C> {
     List<T> insert(List<C> createDTOs) throws SQLException;
 
     Optional<T> findById(ID id) throws SQLException;
-
+    Optional<T> findById(ID id, List<String> conditions, List<Object> params) throws SQLException;
     List<T> findAll() throws SQLException;
     List<T> findAll(UUID id) throws SQLException;
+    List<T> findAll(List<String> conditions, List<Object> params) throws SQLException;
+
     T update(ID id, Map<String, Object> fieldUpdates, Set<String> allowedFields) throws SQLException;
 
     boolean delete(ID id) throws SQLException;

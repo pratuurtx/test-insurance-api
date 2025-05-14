@@ -3,7 +3,7 @@ package com.streamit.application.services.banner;
 import com.streamit.application.daos.banner.BannerDAO;
 import com.streamit.application.dtos.banner.*;
 import com.streamit.application.dtos.common.StatusEnum;
-import com.streamit.application.dtos.common.TypeEnum;
+import com.streamit.application.dtos.common.CategoryEnum;
 import com.streamit.application.dtos.content.ContentCreateDTO;
 import com.streamit.application.exceptions.BadRequestException;
 import com.streamit.application.exceptions.NotFoundException;
@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -36,8 +37,8 @@ public class BannerService {
             List<BannerContentCreateDTO> bannerContentCreateDTOs = new ArrayList<>();
             for (int idx = 0; idx < bannerCreateReqDTO.getContents().size(); idx++) {
                 try {
-                    String imagePath = minioService.uploadFile(bannerCreateReqDTO.getContents().get(idx).getContentImage(), bannerCreateReqDTO.getContents().get(idx).getContentImage().getOriginalFilename());
-                    bannerContentCreateDTOs.add(new BannerContentCreateDTO(coverImagePath, imagePath));
+                    String contentImagePath = minioService.uploadFile(bannerCreateReqDTO.getContents().get(idx).getContentImage(), bannerCreateReqDTO.getContents().get(idx).getContentImage().getOriginalFilename());
+                    bannerContentCreateDTOs.add(new BannerContentCreateDTO(contentImagePath, bannerCreateReqDTO.getContents().get(idx).getContentHyperLink()));
                 } catch (MinioException ex) {
                     log.error(ex.getMessage());
                     throw new BadRequestException(ex.getMessage());
@@ -47,17 +48,15 @@ public class BannerService {
             ContentCreateDTO contentCreateDTO = new ContentCreateDTO(
                     bannerCreateReqDTO.getTitle(),
                     StatusEnum.fromValue(bannerCreateReqDTO.getStatus()),
-                    TypeEnum.BANNER,
-                    bannerCreateReqDTO.getEffectiveFrom(),
-                    bannerCreateReqDTO.getEffectiveTo()
+                    CategoryEnum.BANNER,
+                    LocalDateTime.parse(bannerCreateReqDTO.getEffectiveFrom()),
+                    LocalDateTime.parse(bannerCreateReqDTO.getEffectiveTo())
             );
 
             return bannerDAO.insertBanner(bannerCreateDTO, contentCreateDTO, bannerContentCreateDTOs);
-        } catch (MinioException ex) {
+        } catch (MinioException | SQLException ex) {
             log.error(ex.getMessage());
             throw new BadRequestException(ex.getMessage());
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -82,33 +81,37 @@ public class BannerService {
     public BannerResDTO updateBannerById(UUID id, BannerUpdateReqDTO bannerUpdateReqDTO) {
         try {
             Banner banner = bannerDAO.findById(id).orElseThrow(() -> new NotFoundException(id.toString()));
-            Map<String, Object> contentFieldMap = new HashMap<>();
+            Map<String, Object> contentUpdateMap = new HashMap<>();
             if (bannerUpdateReqDTO.getTitle() != null) {
-                contentFieldMap.put("title", bannerUpdateReqDTO.getTitle());
+                contentUpdateMap.put("title", bannerUpdateReqDTO.getTitle());
             }
 
             if (bannerUpdateReqDTO.getEffectiveFrom() != null) {
-                contentFieldMap.put("effectiveFrom", bannerUpdateReqDTO.getEffectiveFrom());
+                contentUpdateMap.put("effectiveFrom", LocalDateTime.parse(bannerUpdateReqDTO.getEffectiveFrom()));
             }
 
             if (bannerUpdateReqDTO.getEffectiveTo() != null) {
-                contentFieldMap.put("effectiveTo", bannerUpdateReqDTO.getEffectiveTo());
+                contentUpdateMap.put("effectiveTo", LocalDateTime.parse(bannerUpdateReqDTO.getEffectiveTo()));
             }
 
             if (bannerUpdateReqDTO.getStatus() != null) {
-                contentFieldMap.put("status", StatusEnum.valueOf(bannerUpdateReqDTO.getStatus()));
+                contentUpdateMap.put("status", StatusEnum.valueOf(bannerUpdateReqDTO.getStatus()));
             }
 
-            Map<String, Object> bannerFieldMap = new HashMap<>();
+            if (!contentUpdateMap.isEmpty()) {
+                contentUpdateMap.put("updatedAt", LocalDateTime.now());
+            }
+
+            Map<String, Object> bannerUpdateMap = new HashMap<>();
 
             if (bannerUpdateReqDTO.getCoverHyperLink() != null) {
-                bannerFieldMap.put("coverHyperLink", bannerUpdateReqDTO.getCoverHyperLink());
+                bannerUpdateMap.put("coverHyperLink", bannerUpdateReqDTO.getCoverHyperLink());
             }
 
             if (bannerUpdateReqDTO.getCoverImage() != null) {
                 try {
                     String coverImagePath = minioService.uploadFile(bannerUpdateReqDTO.getCoverImage(), bannerUpdateReqDTO.getCoverImage().getOriginalFilename());
-                    bannerFieldMap.put("coverImagePath", coverImagePath);
+                    bannerUpdateMap.put("coverImagePath", coverImagePath);
                 } catch (MinioException ex) {
                     log.error(ex.getMessage());
                     throw new BadRequestException(ex.getMessage());
@@ -120,15 +123,15 @@ public class BannerService {
                 bannerContentUpdateDTO = bannerUpdateReqDTO.getContentUpdates()
                         .stream()
                         .map(bannerContentUpdate -> {
-                            Map<String, Object> bannerContentFieldMap = new HashMap<>();
+                            Map<String, Object> bannercontentUpdateMap = new HashMap<>();
                             try {
                                 if (bannerContentUpdate.getContentImage() != null) {
                                     String contentImagePath = minioService.uploadFile(bannerContentUpdate.getContentImage(), bannerContentUpdate.getContentImage().getOriginalFilename());
-                                    bannerContentFieldMap.put("contentImagePath", contentImagePath);
+                                    bannercontentUpdateMap.put("contentImagePath", contentImagePath);
                                 }
 
                                 if (bannerContentUpdate.getContentHyperLink() != null) {
-                                    bannerContentFieldMap.put("contentHyperLink", bannerContentUpdate.getContentHyperLink());
+                                    bannercontentUpdateMap.put("contentHyperLink", bannerContentUpdate.getContentHyperLink());
                                 }
                             } catch (MinioException ex) {
                                 log.error(ex.getMessage());
@@ -137,7 +140,7 @@ public class BannerService {
 
                             return new BannerContentUpdateDTO(
                                     UUID.fromString(bannerContentUpdate.getId()),
-                                    bannerContentFieldMap
+                                    bannercontentUpdateMap
                             );
                         })
                         .toList();
@@ -167,31 +170,57 @@ public class BannerService {
             }
 
             BannerUpdateDTO bannerUpdateDTO = new BannerUpdateDTO(
-                    bannerFieldMap,
-                    contentFieldMap,
+                    bannerUpdateMap,
+                    contentUpdateMap,
                     bannerContentUpdateDTO,
                     bannerContentCreateDTOs,
                     bannerContentUUIDRemoves
             );
 
-            BannerResDTO updatedBanner = bannerDAO.updateBanner(id, bannerUpdateDTO);
+            BannerResDTO updatedBanner = bannerDAO.updateBannerWithContentById(id, bannerUpdateDTO);
 
             // delete old cover image if updated new cover image
             if (bannerUpdateReqDTO.getCoverImage() != null) {
-                minioService.deleteFile(banner.getCoverImagePath());
+                try {
+                    minioService.deleteFile(banner.getCoverImagePath());
+                } catch (MinioException ex) {
+                    log.error("error when delete (cover image path) {}", ex.getMessage());
+                }
             }
 
-            for (int idx = 0; idx < bannerUpdateReqDTO.getContentUpdates().size(); idx++) {
-                try {
-                    BannerContentResDTO bannerContentResDTO = bannerDAO.findBannerContentByBannerContentId(UUID.fromString(bannerUpdateReqDTO.getContentUpdates().get(idx).getId()));
-                    minioService.deleteFile(bannerContentResDTO.getContentImagePath());
-                } catch (SQLException ex) {
-                    log.error(ex.getMessage());
+            // delete image path in content updates if it exists
+            if (bannerUpdateReqDTO.getContentUpdates() != null) {
+                for (int idx = 0; idx < bannerUpdateReqDTO.getContentUpdates().size(); idx++) {
+                    try {
+                        BannerContentResDTO bannerContentResDTO = bannerDAO.findBannerContentByBannerContentId(UUID.fromString(bannerUpdateReqDTO.getContentUpdates().get(idx).getId()));
+                        minioService.deleteFile(bannerContentResDTO.getContentImagePath());
+                    } catch (SQLException ex) {
+                        log.error("error when delete (updatedItem) {}", ex.getMessage());
+                    }
+                }
+            }
+
+            // delete image path in content removes if it exists
+            if (bannerUpdateReqDTO.getContentRemoves() != null) {
+                for (int idx = 0; idx < bannerUpdateReqDTO.getContentRemoves().size(); idx++) {
+                    try {
+                        BannerContentResDTO bannerContentResDTO = bannerDAO.findBannerContentByBannerContentId(UUID.fromString(bannerUpdateReqDTO.getContentRemoves().get(idx)));
+                        minioService.deleteFile(bannerContentResDTO.getContentImagePath());
+                    } catch (SQLException ex) {
+                        log.error("error when delete (removedItem) {}", ex.getMessage());
+                    }
                 }
             }
 
             return updatedBanner;
         } catch (SQLException | MinioException ex) {
+            if (ex.getMessage().equals("Update failed, no rows affected")) {
+                try {
+                    return bannerDAO.findBannerWithContentsById(id);
+                } catch (SQLException e) {
+                    throw new BadRequestException(e.getMessage());
+                }
+            }
             log.error(ex.getMessage());
             throw new BadRequestException(ex.getMessage());
         }
@@ -203,13 +232,21 @@ public class BannerService {
             BannerResDTO bannerResDTO = bannerDAO.findBannerWithContentsById(id);
             boolean deletedBanner = bannerDAO.deleteBanner(id, banner.getContentId());
             if (deletedBanner) {
-                minioService.deleteFile(bannerResDTO.getCoverImagePath());
+                try {
+                    minioService.deleteFile(bannerResDTO.getCoverImagePath());
+                } catch (MinioException ex) {
+                    log.error(ex.getMessage());
+                }
                 for (int idx = 0; idx < bannerResDTO.getContents().size(); idx++) {
-                    minioService.deleteFile(bannerResDTO.getContents().get(idx).getContentImagePath());
+                    try {
+                        minioService.deleteFile(bannerResDTO.getContents().get(idx).getContentImagePath());
+                    } catch (MinioException ex) {
+                        log.error(ex.getMessage());
+                    }
                 }
             }
             return deletedBanner;
-        } catch (SQLException | MinioException ex) {
+        } catch (SQLException ex) {
             log.error(ex.getMessage());
             throw new BadRequestException(ex.getMessage());
         }

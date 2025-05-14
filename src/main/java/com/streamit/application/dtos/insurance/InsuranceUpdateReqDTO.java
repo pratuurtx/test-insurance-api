@@ -3,8 +3,7 @@ package com.streamit.application.dtos.insurance;
 import com.streamit.application.annotations.common.NotEmptyFile;
 import com.streamit.application.annotations.common.ValidImage;
 import com.streamit.application.annotations.common.ValidStatus;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
 import lombok.Getter;
@@ -21,11 +20,13 @@ public class InsuranceUpdateReqDTO {
     @Length(min = 1, max = 64, message = "title length must be between 1 and 64")
     private String title;
 
-    @FutureOrPresent(message = "effectiveFrom must be in the present or future")
-    private LocalDateTime effectiveFrom;
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
+            message = "effectiveFrom must be in ISO-8601 format (yyyy-MM-ddTHH:mm:ss)")
+    private String effectiveFrom;
 
-    @Future(message = "effectiveTo must be in the future")
-    private LocalDateTime effectiveTo;
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
+            message = "effectiveTo must be in ISO-8601 format (yyyy-MM-ddTHH:mm:ss)")
+    private String effectiveTo;
 
     @ValidStatus
     private String status;

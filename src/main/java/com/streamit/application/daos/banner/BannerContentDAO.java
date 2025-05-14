@@ -21,9 +21,11 @@ public class BannerContentDAO extends AbstractCommonDAO<BannerContent, UUID, Ban
 
     @Override
     public List<BannerContent> findAll(UUID bannerId) throws SQLException {
-        String sql = "SELECT * FROM " + tableName + " WHERE banner_id" + " = ?";
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
+        String sql = """
+                SELECT * FROM %s WHERE banner_id = ?
+                """.formatted(tableName);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setObject(1, bannerId);
             try (ResultSet rs = ps.executeQuery()) {
                 List<BannerContent> results = new ArrayList<>();
@@ -36,9 +38,11 @@ public class BannerContentDAO extends AbstractCommonDAO<BannerContent, UUID, Ban
     }
 
     public List<BannerContent> findByBannerId(UUID bannerId) throws SQLException {
-        String sql = "SELECT * FROM " + tableName + " WHERE banner_id" + " = ?";
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
+        String sql = """
+                SELECT * FROM %s WHERE banner_id = ?
+                """.formatted(tableName);
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setObject(1, bannerId);
             try (ResultSet rs = ps.executeQuery()) {
                 List<BannerContent> results = new ArrayList<>();
@@ -57,21 +61,6 @@ public class BannerContentDAO extends AbstractCommonDAO<BannerContent, UUID, Ban
         fieldMap.put("contentImagePath", createDto.getContentImagePath());
         fieldMap.put("contentHyperLink", createDto.getContentHyperLink());
         return fieldMap;
-    }
-
-    @Override
-    protected Map<String, Object> getFieldMap(BannerContent entity) {
-        Map<String, Object> fieldMap = new HashMap<>();
-        fieldMap.put("id", entity.getId());
-        fieldMap.put("bannerId", entity.getBannerId());
-        fieldMap.put("contentImagePath", entity.getContentImagePath());
-        fieldMap.put("contentHyperLink", entity.getContentHyperLink());
-        return fieldMap;
-    }
-
-    @Override
-    protected UUID getIdValue(BannerContent entity) {
-        return entity.getId();
     }
 
     @Override

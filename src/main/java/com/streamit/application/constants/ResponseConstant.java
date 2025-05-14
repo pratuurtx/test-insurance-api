@@ -5,4 +5,5 @@ public class ResponseConstant {
     public static final String STATUS_CODE = "statusCode";
     public static final String MESSAGE = "message";
     public static final String ERROR = "errors";
+    public static final String PAGING = "paging";
 }

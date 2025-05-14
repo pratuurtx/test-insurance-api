@@ -36,18 +36,18 @@ public class BannerContentValidator implements ConstraintValidator<ValidBannerCo
             BannerContentCreateReqDTO banner = bannerContents.get(idx);
 
             if (banner.getContentImage() == null || banner.getContentImage().isEmpty()) {
-                addConstraintViolation(context, "Banner image at index " + idx + " cannot be empty", idx);
+                addConstraintViolation(context, "contentImage[" + idx + "] cannot be empty", idx);
                 isValid = false;
             } else if (!isValidImageFile(banner.getContentImage().getOriginalFilename())) {
-                addConstraintViolation(context, "Banner image at index " + idx + " must be a valid image (JPG, PNG, GIF, etc.)", idx);
+                addConstraintViolation(context, "contentImage[" + idx + "] must be a valid image", idx);
                 isValid = false;
             }
 
             if (banner.getContentHyperLink() == null || banner.getContentHyperLink().isEmpty()) {
-                addConstraintViolation(context, "Banner hyperlink at index " + idx + " cannot be empty", idx);
+                addConstraintViolation(context, "contentHyperlink[" + idx + "] cannot be empty", idx);
                 isValid = false;
             } else if (!isValidUrl(banner.getContentHyperLink())) {
-                addConstraintViolation(context, "Banner hyperlink at index " + idx + " must be a valid URL", idx);
+                addConstraintViolation(context, "contentHyperlink[" + idx + "] must be a valid URL", idx);
                 isValid = false;
             }
         }

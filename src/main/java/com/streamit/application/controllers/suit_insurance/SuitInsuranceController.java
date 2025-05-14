@@ -54,7 +54,7 @@ public class SuitInsuranceController {
 
     @DeleteMapping(path = "{id}")
     public ResponseEntity<Map<String, Object>> deleteSuitInsurance(@PathVariable("id") UUID id) {
-        this.suitInsuranceService.deleteSuitInsuranceWithId(id);
+        this.suitInsuranceService.deleteSuitInsuranceById(id);
         return new ResponseEntity<>(ResponseUtil.createNoDataResponse("Suit insurance deleted successfully."), HttpStatus.OK);
     }
 }

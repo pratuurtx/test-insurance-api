@@ -13,12 +13,13 @@ import org.springframework.stereotype.Repository;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Repository
 public class SuitInsuranceDAO extends AbstractCommonDAO<SuitInsurance, UUID, SuitInsuranceCreateWithContentDTO> {
     private final ContentDAO contentDAO;
-    private static final Set<String> UPDATEABLE_FIELDS = Set.of(
+    private static final Set<String> UPDATABLE_FIELDS = Set.of(
             "titleTh", "titleEn", "imagePath"
     );
 
@@ -43,12 +44,12 @@ public class SuitInsuranceDAO extends AbstractCommonDAO<SuitInsurance, UUID, Sui
                 conn -> {
                     List<SuitInsurance> suitInsurances = super.findAll();
                     return suitInsurances.stream()
-                            .map(suitInsurance -> {
+                            .flatMap(suitInsurance -> {
                                 try {
-                                    Content content = contentDAO.findById(suitInsurance.getContentId()).orElseThrow(() -> new NotFoundException("Content with ID#" + suitInsurance.getId().toString() + " Not Found."));
-                                    return SuitInsuranceMapper.mapSuitInsuranceToSuitInsuranceResDTO(suitInsurance, content);
-                                } catch (SQLException e) {
-                                    throw new RuntimeException(e);
+                                    Optional<Content> content = contentDAO.findById(suitInsurance.getContentId(), List.of("deleted_at IS NULL", "status = 'ACTIVE'::status_enum", "? BETWEEN effective_from AND effective_to"), List.of(LocalDateTime.now()));
+                                    return content.stream().map(c -> SuitInsuranceMapper.mapSuitInsuranceToSuitInsuranceResDTO(suitInsurance, c));
+                                } catch (SQLException ex) {
+                                    throw new RuntimeException(ex);
                                 }
                             })
                             .toList();
@@ -76,11 +77,11 @@ public class SuitInsuranceDAO extends AbstractCommonDAO<SuitInsurance, UUID, Sui
         ).get(0);
     }
 
-    public boolean deleteSuitInsuranceById(UUID id) throws SQLException {
+    public boolean deleteSuitInsuranceById(UUID id, UUID contentId) throws SQLException {
         return executeTransaction(
                 conn -> {
                     boolean deletedSuitInsurance = super.delete(id);
-                    boolean deletedContent = contentDAO.delete(id);
+                    boolean deletedContent = contentDAO.delete(contentId);
                     return deletedSuitInsurance && deletedContent;
                 }
         ).get(0);
@@ -97,28 +98,12 @@ public class SuitInsuranceDAO extends AbstractCommonDAO<SuitInsurance, UUID, Sui
     }
 
     @Override
-    protected Map<String, Object> getFieldMap(SuitInsurance entity) {
-        Map<String, Object> fieldMap = new HashMap<>();
-        fieldMap.put("id", entity.getId());
-        fieldMap.put("titleTh", entity.getTitleTh());
-        fieldMap.put("titleEn", entity.getTitleEn());
-        fieldMap.put("imagePath", entity.getImagePath());
-        fieldMap.put("contentId", entity.getContentId());
-        return fieldMap;
-    }
-
-    @Override
-    protected UUID getIdValue(SuitInsurance entity) {
-        return entity.getId();
-    }
-
-    @Override
     protected boolean isInsertableField(String fieldName) {
         return !fieldName.equals("id");
     }
 
     public SuitInsurance update(UUID id, Map<String, Object> fieldUpdates) throws SQLException {
-        return super.update(id, fieldUpdates, UPDATEABLE_FIELDS);
+        return super.update(id, fieldUpdates, UPDATABLE_FIELDS);
     }
 
     private static class SuitInsuranceRowMapper implements RowMapper<SuitInsurance> {

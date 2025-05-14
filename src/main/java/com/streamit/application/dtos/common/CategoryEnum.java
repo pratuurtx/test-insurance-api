@@ -3,14 +3,14 @@ package com.streamit.application.dtos.common;
 import lombok.Getter;
 
 @Getter
-public enum TypeEnum {
+public enum CategoryEnum {
     BANNER("BANNER"),
     PROMOTION("PROMOTION"),
     INSURANCE("INSURANCE"),
     SUIT_INSURANCE("SUIT_INSURANCE");
     private final String value;
 
-    TypeEnum(String value) {
+    CategoryEnum(String value) {
         if (!value.equals("BANNER")
                 && !value.equals("PROMOTION")
                 && !value.equals("INSURANCE")
@@ -20,8 +20,8 @@ public enum TypeEnum {
         this.value = value;
     }
 
-    public static TypeEnum fromValue(String value) {
-        for (TypeEnum type : TypeEnum.values()) {
+    public static CategoryEnum fromValue(String value) {
+        for (CategoryEnum type : CategoryEnum.values()) {
             if (type.getValue().equalsIgnoreCase(value)) {
                 return type;
             }

@@ -25,12 +25,12 @@ public class InsuranceController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getInsurances() {
         var result = this.insuranceService.getInsurances();
-        return new ResponseEntity<>(ResponseUtil.success("Get Insurances Success", result), HttpStatus.OK);
+        return new ResponseEntity<>(ResponseUtil.success("All insurances retrieved successfully.", result), HttpStatus.OK);
     }
 
     @GetMapping(path = "{id}")
     public ResponseEntity<Map<String, Object>> getInsuranceById(@PathVariable UUID id) {
-        return new ResponseEntity<>(ResponseUtil.success("Get Insurance With ID#" + id.toString() + " Success.", insuranceService.getInsuranceById(id)), HttpStatus.OK);
+        return new ResponseEntity<>(ResponseUtil.success("Insurance retrieved successfully.", insuranceService.getInsuranceById(id)), HttpStatus.OK);
     }
 
     @PostMapping(consumes = "multipart/form-data")
@@ -38,7 +38,7 @@ public class InsuranceController {
             @Validated @ModelAttribute InsuranceCreateReqDTO insuranceCreateReqDTO
     ) {
         var result = insuranceService.createInsurance(insuranceCreateReqDTO);
-        return new ResponseEntity<>(ResponseUtil.created("Create Insurance Success", result), HttpStatus.CREATED);
+        return new ResponseEntity<>(ResponseUtil.created("Insurance created successfully.", result), HttpStatus.CREATED);
     }
 
     @PatchMapping(path = "{id}", consumes = "multipart/form-data")
@@ -46,13 +46,12 @@ public class InsuranceController {
             @PathVariable("id") UUID id,
             @Validated @ModelAttribute InsuranceUpdateReqDTO insuranceUpdateReqDTO
     ) {
-        System.out.println("Insurance Update Req DTO " + insuranceUpdateReqDTO);
-        return new ResponseEntity<>(ResponseUtil.success("Update Insurance Success", insuranceService.updateInsurance(id, insuranceUpdateReqDTO)), HttpStatus.OK);
+        return new ResponseEntity<>(ResponseUtil.success("Insurance updated successfully.", insuranceService.updateInsurance(id, insuranceUpdateReqDTO)), HttpStatus.OK);
     }
 
     @DeleteMapping(path = "{id}")
     public ResponseEntity<Map<String, Object>> deleteInsurance(@PathVariable UUID id) {
-        insuranceService.deleteInsuranceById(id);
-        return new ResponseEntity<>(ResponseUtil.createNoDataResponse("Delete Insurance with ID#" + id.toString() + " Success"), HttpStatus.OK);
+        insuranceService.softDeleteInsuranceById(id);
+        return new ResponseEntity<>(ResponseUtil.createNoDataResponse("Insurance deleted successfully."), HttpStatus.OK);
     }
 }

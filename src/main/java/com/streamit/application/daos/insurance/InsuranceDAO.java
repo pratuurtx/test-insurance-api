@@ -20,9 +20,10 @@ import java.util.*;
 @Slf4j
 @Repository
 public class InsuranceDAO extends AbstractCommonDAO<Insurance, UUID, InsuranceCreateWithContentDTO> {
-    private static final Set<String> UPDATEABLE_FIELDS = Set.of(
+    private static final Set<String> UPDATABLE_FIELDS = Set.of(
             "titleTh", "titleEn", "descriptionTh", "descriptionEn",
-            "coverImagePath", "iconImagePath"
+            "coverImagePath", "iconImagePath",
+            "deletedAt", "updatedAt"
     );
 
     private final ContentDAO contentDAO;
@@ -47,12 +48,12 @@ public class InsuranceDAO extends AbstractCommonDAO<Insurance, UUID, InsuranceCr
     public List<InsuranceResDTO> findAllInsurancesWithContent() throws SQLException {
         return executeTransaction(
                 conn -> {
-                    List<Insurance> insurances = findAll();
+                    List<Insurance> insurances = super.findAll(List.of("deleted_at IS NULL"), List.of());
                     return insurances.stream()
-                            .map(insurance -> {
+                            .flatMap(insurance -> {
                                 try {
-                                    Content content = contentDAO.findById(insurance.getContentId()).orElseThrow(() -> new NotFoundException("content with id#" + insurance.getContentId().toString() + " not found."));
-                                    return InsuranceMapper.mapInsuranceToInsuranceResDTO(insurance, content);
+                                    Optional<Content> content = contentDAO.findById(insurance.getContentId(), List.of("deleted_at IS NULL", "status = 'ACTIVE'::status_enum", "? BETWEEN effective_from AND effective_to"), List.of(LocalDateTime.now()));
+                                    return content.stream().map(c -> InsuranceMapper.mapInsuranceToInsuranceResDTO(insurance, c));
                                 } catch (SQLException ex) {
                                     throw new RuntimeException(ex);
                                 }
@@ -65,7 +66,7 @@ public class InsuranceDAO extends AbstractCommonDAO<Insurance, UUID, InsuranceCr
     public InsuranceResDTO findInsuranceWithContentById(UUID id) throws SQLException {
         return executeTransaction(
                 conn -> {
-                    Insurance insurance = findById(id).orElseThrow(() -> new NotFoundException("Insurance was not found."));
+                    Insurance insurance = super.findById(id).orElseThrow(() -> new NotFoundException("Insurance was not found."));
                     Content content = contentDAO.findById(insurance.getContentId()).orElseThrow(() -> new NotFoundException("Content was not found."));
                     return InsuranceMapper.mapInsuranceToInsuranceResDTO(insurance, content);
                 }
@@ -75,7 +76,7 @@ public class InsuranceDAO extends AbstractCommonDAO<Insurance, UUID, InsuranceCr
     public InsuranceResDTO updateInsurance(UUID id, InsuranceUpdateDTO insuranceUpdateDTO) throws SQLException {
         return executeTransaction(
                 conn -> {
-                    Insurance updatedInsurance = update(id, insuranceUpdateDTO.getInsuranceUpdateMap(), UPDATEABLE_FIELDS);
+                    Insurance updatedInsurance = super.update(id, insuranceUpdateDTO.getInsuranceUpdateMap(), UPDATABLE_FIELDS);
                     Content updatedContent = contentDAO.update(updatedInsurance.getContentId(), insuranceUpdateDTO.getContentUpdateMap());
                     return InsuranceMapper.mapInsuranceToInsuranceResDTO(updatedInsurance, updatedContent);
                 }
@@ -92,7 +93,6 @@ public class InsuranceDAO extends AbstractCommonDAO<Insurance, UUID, InsuranceCr
         ).get(0);
     }
 
-
     @Override
     protected Map<String, Object> getCreateFieldMap(InsuranceCreateWithContentDTO createDto) {
         Map<String, Object> fieldMap = new HashMap<>();
@@ -104,28 +104,6 @@ public class InsuranceDAO extends AbstractCommonDAO<Insurance, UUID, InsuranceCr
         fieldMap.put("iconImagePath", createDto.getIconImagePath());
         fieldMap.put("contentId", createDto.getContentId());
         return fieldMap;
-    }
-
-    @Override
-    protected Map<String, Object> getFieldMap(Insurance entity) {
-        Map<String, Object> fieldMap = new HashMap<>();
-        fieldMap.put("id", entity.getId());
-        fieldMap.put("titleTh", entity.getTitleTh());
-        fieldMap.put("titleEn", entity.getTitleEn());
-        fieldMap.put("descriptionTh", entity.getDescriptionTh());
-        fieldMap.put("descriptionEn", entity.getDescriptionEn());
-        fieldMap.put("coverImagePath", entity.getCoverImagePath());
-        fieldMap.put("iconImagePath", entity.getIconImagePath());
-        fieldMap.put("contentId", entity.getContentId());
-        fieldMap.put("createdAt", entity.getCreatedAt());
-        fieldMap.put("updatedAt", entity.getUpdatedAt());
-        fieldMap.put("deletedAt", entity.getDeletedAt());
-        return fieldMap;
-    }
-
-    @Override
-    protected UUID getIdValue(Insurance entity) {
-        return entity.getId();
     }
 
     @Override

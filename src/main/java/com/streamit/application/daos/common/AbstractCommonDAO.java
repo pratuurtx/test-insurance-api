@@ -1,7 +1,7 @@
 package com.streamit.application.daos.common;
 
 import com.streamit.application.dtos.common.StatusEnum;
-import com.streamit.application.dtos.common.TypeEnum;
+import com.streamit.application.dtos.common.CategoryEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -29,36 +29,20 @@ public abstract class AbstractCommonDAO<T, ID, C> implements CommonDAO<T, ID, C>
         R execute(Connection conn) throws SQLException;
     }
 
-    protected <R> List<R> executeTransaction(TransactionOperation<R>... operations) throws SQLException {
-        Connection conn = null;
-        try {
-            conn = dataSource.getConnection();
+    @SafeVarargs
+    protected final <R> List<R> executeTransaction(TransactionOperation<R>... operations) throws SQLException {
+        try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false);
-
-            List<R> results = new ArrayList<>();
-            for (TransactionOperation<R> operation : operations) {
-                results.add(operation.execute(conn));
-            }
-
-            conn.commit();
-            return results;
-        } catch (SQLException e) {
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    e.addSuppressed(ex);
+            try {
+                List<R> results = new ArrayList<>();
+                for (TransactionOperation<R> operation : operations) {
+                    results.add(operation.execute(conn));
                 }
-            }
-            throw e;
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                } catch (SQLException e) {
-                    System.err.println("Error closing connection: " + e.getMessage());
-                }
+                conn.commit();
+                return results;
+            } catch (SQLException ex) {
+                conn.rollback();
+                throw ex;
             }
         }
     }
@@ -88,22 +72,27 @@ public abstract class AbstractCommonDAO<T, ID, C> implements CommonDAO<T, ID, C>
                         .map(k -> "?")
                         .collect(Collectors.joining(", ")) + ")")
                 .collect(Collectors.joining(", "));
-        String sql = String.format("INSERT INTO %s (%s) VALUES %s RETURNING *", tableName, columns, values);
-        log.info("raw sql: {}", sql);
+
+        String sql = """
+                INSERT INTO %s (%s)
+                VALUES %s
+                RETURNING *
+                """.formatted(tableName, columns, values);
+
+        log.info("SQL: {}", sql);
+
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            int index = 1;
+            int idx = 1;
             for (C dto : createDtos) {
                 Map<String, Object> fieldMap = getCreateFieldMap(dto);
                 for (String field : insertFields) {
                     Object value = fieldMap.get(field);
-                    if (value instanceof StatusEnum) {
-                        ps.setObject(index++, ((StatusEnum) value).getValue(), Types.OTHER);
-                    } else if (value instanceof TypeEnum) {
-                        ps.setObject(index++, ((TypeEnum) value).getValue(), Types.OTHER);
+                    if (value instanceof Enum<?>) {
+                        ps.setObject(idx++, ((Enum<?>) value).name(), Types.OTHER);
                     } else {
-                        ps.setObject(index++, value);
+                        ps.setObject(idx++, value);
                     }
                 }
             }
@@ -120,10 +109,14 @@ public abstract class AbstractCommonDAO<T, ID, C> implements CommonDAO<T, ID, C>
 
     @Override
     public Optional<T> findById(ID id) throws SQLException {
-        String sql = String.format("SELECT * FROM %s WHERE %s = ?", tableName, idColumnName);
+        String sql = """
+                SELECT * FROM %s WHERE %s = ?
+                """.formatted(tableName, idColumnName);
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql)) {
+        log.info("SQL: {}", sql);
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setObject(1, id);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -136,11 +129,44 @@ public abstract class AbstractCommonDAO<T, ID, C> implements CommonDAO<T, ID, C>
     }
 
     @Override
-    public List<T> findAll() throws SQLException {
-        String sql = String.format("SELECT * FROM %s", tableName);
+    public Optional<T> findById(ID id, List<String> conditions, List<Object> params) throws SQLException {
+        StringBuilder sqlBuilder = new StringBuilder("""
+                SELECT * FROM %s
+                WHERE %s = ?
+                """.formatted(tableName, idColumnName));
+        for (String condition : conditions) {
+            sqlBuilder.append(" AND ").append(condition);
+        }
 
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement ps = connection.prepareStatement(sql);
+        log.info("SQL: {}", sqlBuilder);
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sqlBuilder.toString())) {
+            int index = 1;
+            ps.setObject(index++, id);
+            for (Object param : params) {
+                ps.setObject(index++, param);
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.ofNullable(rowMapper.mapRow(rs, 1));
+                }
+                return Optional.empty();
+            }
+        }
+    }
+
+    @Override
+    public List<T> findAll() throws SQLException {
+        String sql = """
+                SELECT * FROM %s
+                """.formatted(tableName);
+
+        log.info("SQL: {}", sql);
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
 
             List<T> results = new ArrayList<>();
@@ -154,10 +180,45 @@ public abstract class AbstractCommonDAO<T, ID, C> implements CommonDAO<T, ID, C>
 
     @Override
     public List<T> findAll(UUID id) throws SQLException {
-        String sql = "SELECT * FROM " + tableName + " WHERE " + idColumnName + " = ?";
+        String sql = """
+                SELECT * FROM %s
+                WHERE %s = ?
+                """.formatted(tableName, idColumnName);
+
+        log.info("SQL: {}", sql);
+
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setObject(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<T> results = new ArrayList<>();
+                while (rs.next()) {
+                    results.add(rowMapper.mapRow(rs, 1));
+                }
+                return results;
+            }
+        }
+    }
+
+    @Override
+    public List<T> findAll(List<String> conditions, List<Object> params) throws SQLException {
+        StringBuilder sqlBuilder = new StringBuilder("""
+                SELECT * FROM %s
+                WHERE 1 = 1
+                """.formatted(tableName));
+        for (String condition : conditions) {
+            sqlBuilder.append(" AND ").append(condition);
+        }
+
+        log.info("SQL : {}", sqlBuilder);
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sqlBuilder.toString())) {
+            int index = 1;
+            for (Object param : params) {
+                ps.setObject(index++, param);
+            }
+
             try (ResultSet rs = ps.executeQuery()) {
                 List<T> results = new ArrayList<>();
                 while (rs.next()) {
@@ -188,23 +249,27 @@ public abstract class AbstractCommonDAO<T, ID, C> implements CommonDAO<T, ID, C>
                 .map(k -> camelToSnake(k) + " = ?")
                 .collect(Collectors.joining(", "));
 
-        String sql = String.format("UPDATE %s SET %s WHERE %s = ? RETURNING *",
-                tableName, setClause, idColumnName);
-        log.info("raw sql: {}", sql);
+        String sql = """
+                UPDATE %s
+                SET %s
+                WHERE %s = ?
+                RETURNING *
+                """.formatted(tableName, setClause, idColumnName);
+
+        log.info("SQL: {}", sql);
+
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
 
-            int index = 1;
+            int idx = 1;
             for (Object value : filteredUpdates.values()) {
-                if (value instanceof StatusEnum) {
-                    ps.setObject(index++, ((StatusEnum) value).getValue(), Types.OTHER);
-                } else if (value instanceof TypeEnum) {
-                    ps.setObject(index++, ((TypeEnum) value).getValue(), Types.OTHER);
+                if (value instanceof Enum<?>) {
+                    ps.setObject(idx++, ((Enum<?>) value).name(), Types.OTHER);
                 } else {
-                    ps.setObject(index++, value);
+                    ps.setObject(idx++, value);
                 }
             }
-            ps.setObject(index, id);
+            ps.setObject(idx, id);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -217,7 +282,12 @@ public abstract class AbstractCommonDAO<T, ID, C> implements CommonDAO<T, ID, C>
 
     @Override
     public boolean delete(ID id) throws SQLException {
-        String sql = String.format("DELETE FROM %s WHERE %s = ?", tableName, idColumnName);
+        String sql = """
+                DELETE FROM %s
+                WHERE %s = ?
+                """.formatted(tableName, idColumnName);
+
+        log.info("SQL: {}", sql);
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -236,7 +306,12 @@ public abstract class AbstractCommonDAO<T, ID, C> implements CommonDAO<T, ID, C>
                 .map(id -> "?")
                 .collect(Collectors.joining(", "));
 
-        String sql = String.format("DELETE FROM %s WHERE %s IN (%s)", tableName, idColumnName, placeholders);
+        String sql = """
+                DELETE FROM %s
+                WHERE (%s) IN (%s)
+                """.formatted(tableName, placeholders, idColumnName);
+
+        log.info("SQL: {}", sql);
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -256,16 +331,5 @@ public abstract class AbstractCommonDAO<T, ID, C> implements CommonDAO<T, ID, C>
 
     protected abstract Map<String, Object> getCreateFieldMap(C createDto);
 
-    protected abstract Map<String, Object> getFieldMap(T entity);
-
-    protected abstract ID getIdValue(T entity);
-
     protected abstract boolean isInsertableField(String fieldName);
-
-    protected void setParameters(PreparedStatement ps, Object... params) throws SQLException {
-        for (int i = 0; i < params.length; i++) {
-            ps.setObject(i + 1, params[i]);
-        }
-    }
-
 }

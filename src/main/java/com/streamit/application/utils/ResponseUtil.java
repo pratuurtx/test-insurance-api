@@ -1,6 +1,7 @@
 package com.streamit.application.utils;
 
 import com.streamit.application.constants.ResponseConstant;
+import com.streamit.application.dtos.common.Paging;
 import org.springframework.http.HttpStatus;
 
 import java.util.HashMap;
@@ -38,27 +39,36 @@ public class ResponseUtil {
     }
 
     private static <T> Map<String, Object> createSuccessResponse(int statusCode, String message, T data) {
-        Map<String, Object> map = new HashMap<>();
-        map.put(ResponseConstant.STATUS_CODE, statusCode);
-        map.put(ResponseConstant.MESSAGE, message);
-        map.put(ResponseConstant.DATA, data);
-        return map;
+        return Map.of(
+                ResponseConstant.STATUS_CODE, statusCode,
+                ResponseConstant.MESSAGE, message,
+                ResponseConstant.DATA, data
+        );
     }
 
     // Core method for error responses
     private static <T> Map<String, Object> createErrorResponse(int statusCode, String message, List<String> errors) {
-        Map<String, Object> map = new HashMap<>();
-        map.put(ResponseConstant.STATUS_CODE, statusCode);
-        map.put(ResponseConstant.MESSAGE, message);
-        map.put(ResponseConstant.ERROR, errors);
-        return map;
+        return Map.of(
+                ResponseConstant.STATUS_CODE, statusCode,
+                ResponseConstant.MESSAGE, message,
+                ResponseConstant.ERROR, errors
+        );
     }
 
     public static Map<String, Object> createNoDataResponse(String message) {
-        Map<String, Object> map = new HashMap<>();
-        map.put(ResponseConstant.STATUS_CODE, HttpStatus.OK.value());
-        map.put(ResponseConstant.MESSAGE, message);
-        return map;
+        return Map.of(
+                ResponseConstant.STATUS_CODE, HttpStatus.OK.value(),
+                ResponseConstant.MESSAGE, message
+        );
+    }
+
+    public static <T> Map<String, Object> createPagingResponse(String message, T data, Paging paging) {
+        return Map.of(
+                ResponseConstant.STATUS_CODE, HttpStatus.OK.value(),
+                ResponseConstant.MESSAGE, message,
+                ResponseConstant.DATA, data,
+                ResponseConstant.PAGING, paging
+        );
     }
 }
 
