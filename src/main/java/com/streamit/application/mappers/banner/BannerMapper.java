@@ -1,6 +1,7 @@
 package com.streamit.application.mappers.banner;
 
 import com.streamit.application.dtos.banner.*;
+import com.streamit.application.dtos.common.CategoryEnum;
 import com.streamit.application.dtos.content.Content;
 
 import java.util.List;
@@ -14,10 +15,13 @@ public class BannerMapper {
     ) {
         return new BannerResDTO(
                 banner.getId(),
+                
                 content.getTitle(),
                 content.getEffectiveFrom(),
                 content.getEffectiveTo(),
                 content.getStatus(),
+                CategoryEnum.BANNER,
+
                 banner.getCoverImagePath(),
                 banner.getCoverHyperLink(),
                 BannerMapper.mapBannerContentListToBannerContentResDTOList(bannerContents)

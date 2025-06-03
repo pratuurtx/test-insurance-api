@@ -1,5 +1,6 @@
 package com.streamit.application.mappers.insurance;
 
+import com.streamit.application.dtos.common.CategoryEnum;
 import com.streamit.application.dtos.content.Content;
 import com.streamit.application.dtos.insurance.*;
 
@@ -11,6 +12,7 @@ public class InsuranceMapper {
                 content.getEffectiveFrom(),
                 content.getEffectiveTo(),
                 content.getStatus(),
+                CategoryEnum.INSURANCE,
 
                 insurance.getTitleTh(),
                 insurance.getTitleEn(),

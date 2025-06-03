@@ -1,5 +1,6 @@
 package com.streamit.application.dtos.banner;
 
+import com.streamit.application.dtos.common.CategoryEnum;
 import com.streamit.application.dtos.common.StatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -21,7 +22,7 @@ public class BannerResDTO {
     private LocalDateTime effectiveFrom;
     private LocalDateTime effectiveTo;
     private StatusEnum status;
-
+    private CategoryEnum category;
     private String coverImagePath;
     private String coverHyperLink;
     private List<BannerContentResDTO> contents;

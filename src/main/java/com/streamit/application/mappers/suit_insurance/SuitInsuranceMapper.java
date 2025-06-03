@@ -1,5 +1,6 @@
 package com.streamit.application.mappers.suit_insurance;
 
+import com.streamit.application.dtos.common.CategoryEnum;
 import com.streamit.application.dtos.content.Content;
 import com.streamit.application.dtos.suit_insurance.*;
 
@@ -21,6 +22,7 @@ public class SuitInsuranceMapper {
                 content.getEffectiveFrom(),
                 content.getEffectiveTo(),
                 content.getStatus(),
+                CategoryEnum.SUIT_INSURANCE,
 
                 suitInsurance.getTitleTh(),
                 suitInsurance.getTitleEn(),

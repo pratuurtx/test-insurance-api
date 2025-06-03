@@ -1,5 +1,6 @@
 package com.streamit.application.dtos.promotion;
 
+import com.streamit.application.dtos.common.CategoryEnum;
 import com.streamit.application.dtos.common.StatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,6 +19,7 @@ public class PromotionResDTO {
     private LocalDateTime effectiveFrom;
     private LocalDateTime effectiveTo;
     private StatusEnum status;
+    private CategoryEnum category;
 
     private String titleTh;
     private String titleEn;

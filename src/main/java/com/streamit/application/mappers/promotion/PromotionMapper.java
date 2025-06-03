@@ -1,5 +1,6 @@
 package com.streamit.application.mappers.promotion;
 
+import com.streamit.application.dtos.common.CategoryEnum;
 import com.streamit.application.dtos.content.Content;
 import com.streamit.application.dtos.promotion.*;
 
@@ -13,6 +14,7 @@ public class PromotionMapper {
                 content.getEffectiveFrom(),
                 content.getEffectiveTo(),
                 content.getStatus(),
+                CategoryEnum.PROMOTION,
 
                 promotion.getTitleTh(),
                 promotion.getTitleEn(),

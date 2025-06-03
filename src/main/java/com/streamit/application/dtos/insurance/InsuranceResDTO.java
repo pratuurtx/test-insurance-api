@@ -1,5 +1,6 @@
 package com.streamit.application.dtos.insurance;
 
+import com.streamit.application.dtos.common.CategoryEnum;
 import com.streamit.application.dtos.common.StatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -18,6 +19,7 @@ public class InsuranceResDTO {
     private LocalDateTime effectiveFrom;
     private LocalDateTime effectiveTo;
     private StatusEnum status;
+    private CategoryEnum category;
 
     private String titleTh;
     private String titleEn;
