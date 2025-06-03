@@ -16,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class SuitInsuranceUpdateReqDTO {
 
     //    common content
-    @Length(min = 1, max = 64, message = "title length must be between 1 and 64")
+    @Length(min = 1, max = 255, message = "title length must be between 1 and 255")
     private String title;
 
     @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",

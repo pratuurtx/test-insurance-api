@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 public class SuitInsuranceCreateReqDTO {
     //    common content
     @NotBlank(message = "title is required")
-    @Length(min = 1, max = 64, message = "title length must be between 1 and 64")
+    @Length(min = 1, max = 255, message = "title length must be between 1 and 255")
     private String title;
 
     @NotNull(message = "effectiveFrom is required")

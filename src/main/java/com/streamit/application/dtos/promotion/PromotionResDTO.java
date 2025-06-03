@@ -23,7 +23,7 @@ public class PromotionResDTO {
     private String titleEn;
     private String descriptionTh;
     private String descriptionEn;
-    private String coverImageUrl;
+    private String coverImagePath;
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private LocalDateTime createdAt;

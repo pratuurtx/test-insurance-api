@@ -15,7 +15,7 @@ import java.util.List;
 @Getter
 @Setter
 public class BannerUpdateReqDTO {
-    @Length(min = 1, max = 63, message = "title length must be between 1 and 63")
+    @Length(min = 1, max = 255, message = "title length must be between 1 and 255")
     private String title;
 
     @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",

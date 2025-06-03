@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class InsuranceUpdateReqDTO {
     //    common content
-    @Length(min = 1, max = 64, message = "title length must be between 1 and 64")
+    @Length(min = 1, max = 255, message = "title length must be between 1 and 255")
     private String title;
 
     @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$",
@@ -32,10 +32,10 @@ public class InsuranceUpdateReqDTO {
     private String status;
     //
 
-    @Length(min = 1, max = 31, message = "titleTh length must be between 1 and 31")
+    @Length(min = 1, max = 255, message = "titleTh length must be between 1 and 255")
     private String titleTh;
 
-    @Length(min = 1, max = 31, message = "titleEn length must be between 1 and 31")
+    @Length(min = 1, max = 255, message = "titleEn length must be between 1 and 255")
     private String titleEn;
 
     @Length(min = 1, max = 255, message = "descriptionTh length must be between 1 and 255")
