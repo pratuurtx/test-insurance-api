@@ -49,9 +49,9 @@ public class ContentDAO extends AbstractCommonDAO<Content, UUID, ContentCreateDT
                         END AS category_content_id
                     FROM contents c
                     LEFT JOIN banners b ON c.id = b.content_id AND c.category = 'BANNER'::category_enum
-                    LEFT JOIN insurances i ON c.id = i.content_id AND c.category = 'INSURANCE'::category_enum
+                    LEFT JOIN insurances i ON c.id = i.content_id AND c.category = 'INSURANCE'::category_enum AND i.deleted_at IS NULL
                     LEFT JOIN suit_insurances si ON c.id = si.content_id AND c.category = 'SUIT_INSURANCE'::category_enum
-                    LEFT JOIN promotions p ON c.id = p.content_id AND c.category = 'PROMOTION'::category_enum
+                    LEFT JOIN promotions p ON c.id = p.content_id AND c.category = 'PROMOTION'::category_enum AND p.deleted_at IS NULL
                     WHERE 1=1
                 """);
 
@@ -115,9 +115,9 @@ public class ContentDAO extends AbstractCommonDAO<Content, UUID, ContentCreateDT
                         END AS category_content_id
                     FROM contents c
                     LEFT JOIN banners b ON c.id = b.content_id AND c.category = 'BANNER'::category_enum
-                    LEFT JOIN insurances i ON c.id = i.content_id AND c.category = 'INSURANCE'::category_enum
+                    LEFT JOIN insurances i ON c.id = i.content_id AND c.category = 'INSURANCE'::category_enum AND c.deleted_at IS NULL
                     LEFT JOIN suit_insurances si ON c.id = si.content_id AND c.category = 'SUIT_INSURANCE'::category_enum
-                    LEFT JOIN promotions p ON c.id = p.content_id AND c.category = 'PROMOTION'::category_enum
+                    LEFT JOIN promotions p ON c.id = p.content_id AND c.category = 'PROMOTION'::category_enum AND p.deleted_at IS NULL
                     WHERE 1=1
                 """);
 
