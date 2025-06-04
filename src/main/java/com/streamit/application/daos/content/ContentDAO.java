@@ -157,6 +157,45 @@ public class ContentDAO extends AbstractCommonDAO<Content, UUID, ContentCreateDT
         }
     }
 
+    public Optional<ContentResDTO> findContentCategoryById(UUID id) throws SQLException {
+        String sql = """
+                SELECT id, title, status, category, category_content_id
+                FROM (
+                    SELECT
+                        c.id,
+                        c.title,
+                        c.status,
+                        c.category,
+                        CASE
+                            WHEN c.category = 'BANNER'::category_enum THEN b.id::uuid
+                            WHEN c.category = 'INSURANCE'::category_enum THEN i.id::uuid
+                            WHEN c.category = 'SUIT_INSURANCE'::category_enum THEN si.id::uuid
+                            WHEN c.category = 'PROMOTION'::category_enum THEN p.id::uuid
+                        END AS category_content_id
+                    FROM contents c
+                    LEFT JOIN banners b ON c.id = b.content_id AND c.category = 'BANNER'::category_enum
+                    LEFT JOIN insurances i ON c.id = i.content_id AND c.category = 'INSURANCE'::category_enum AND i.deleted_at IS NULL
+                    LEFT JOIN suit_insurances si ON c.id = si.content_id AND c.category = 'SUIT_INSURANCE'::category_enum
+                    LEFT JOIN promotions p ON c.id = p.content_id AND c.category = 'PROMOTION'::category_enum AND p.deleted_at IS NULL
+                    WHERE c.id = ?::uuid
+                ) sub
+                WHERE sub.category_content_id IS NOT NULL
+                """;
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)
+        ) {
+            ps.setObject(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapContentResDTO(rs, 1));
+                }
+                return Optional.empty();
+            }
+        }
+    }
+
     private ContentResDTO mapContentResDTO(ResultSet rs, int rowNum) throws SQLException {
         ContentResDTO dto = new ContentResDTO();
         dto.setId(UUID.fromString(rs.getString("id")));
